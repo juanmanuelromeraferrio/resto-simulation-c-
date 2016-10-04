@@ -28,3 +28,6 @@
 *.out
 *.app
 /Debug/
+
+# Clion build
+/.idea/*
