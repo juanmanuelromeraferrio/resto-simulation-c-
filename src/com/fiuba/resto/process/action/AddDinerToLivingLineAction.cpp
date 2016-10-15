@@ -7,11 +7,6 @@
 
 #include "AddDinerToLivingLineAction.h"
 
-#include <unistd.h>
-#include <csignal>
-#include <exception>
-#include <sstream>
-
 #include "../../logger/Logger.h"
 #include "../../logger/Strings.h"
 #include "../../utils/Constant.h"
@@ -24,17 +19,15 @@ AddDinerToLivingLineAction::AddDinerToLivingLineAction() {
 	this->dinersInLivingFifo = new Fifo(DINER_IN_LIVING);
 
 	this->memorySemaphore = new Semaphore(FILE_RESTAURANT,
-	KEY_MEMORY, 1);
+	KEY_MEMORY);
 }
 
 AddDinerToLivingLineAction::~AddDinerToLivingLineAction() {
 	sharedMemory.free();
-
-	this->dinersInLivingFifo->cerrar();
-	delete (this->dinersInLivingFifo);
+	dinersInLivingFifo->cerrar();
 }
 
-void AddDinerToLivingLineAction::run(unsigned int dinerPid) {
+void AddDinerToLivingLineAction::run(unsigned long dinerPid) {
 	Logger::getInstance()->insert(KEY_DINER_TO_LIVING_ACTION,
 	STRINGS_ADD_DINER_TO_LIVING, dinerPid);
 
@@ -47,8 +40,5 @@ void AddDinerToLivingLineAction::run(unsigned int dinerPid) {
 	this->memorySemaphore->signal();
 
 	dinersInLivingFifo->_write((char *) &dinerPid, sizeof(unsigned long));
-
-	exit(0);
-
 }
 

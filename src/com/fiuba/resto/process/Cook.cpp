@@ -32,10 +32,7 @@ Cook::~Cook() {
 
 void Cook::run() {
 
-	SIGINT_Handler sigint_handler;
-	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
-
-	while (sigint_handler.getGracefulQuit() == 0) {
+	while (true) {
 
 		try {
 			order_t order = searchOrder();
@@ -44,8 +41,6 @@ void Cook::run() {
 		} catch (exception& e) {
 			throw e;
 		}
-
-		sleep(10);
 	}
 }
 

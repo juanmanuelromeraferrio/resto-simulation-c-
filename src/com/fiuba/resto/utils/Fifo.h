@@ -17,6 +17,7 @@ public:
 
 	int _write ( char* dato,int datoSize );
 	int _read ( char* buffer,int buffSize );
+	void _open(int _oflag);
 	void cerrar ();
 	void _destroy ();
 };

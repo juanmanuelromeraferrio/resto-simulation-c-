@@ -81,9 +81,6 @@ template<class T> int SharedMemory<T>::create(const char *file, char key,
 }
 
 template<class T> void SharedMemory<T>::free() {
-
-	std::cout << "SharedMemory Free: " << std::endl;
-
 	// detach del bloque de memoria
 	shmdt((void *) this->dataPointer);
 

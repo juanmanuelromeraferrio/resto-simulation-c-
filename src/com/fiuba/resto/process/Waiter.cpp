@@ -7,48 +7,51 @@
 
 #include "Waiter.h"
 
+#include <sys/types.h>
 #include <unistd.h>
-#include <csignal>
 #include <exception>
 #include <sstream>
 
 #include "../logger/Logger.h"
 #include "../logger/Strings.h"
 #include "../utils/Constant.h"
-#include "../utils/signals/SignalHandler.h"
-#include "../utils/signals/SIGINT_Handler.h"
-#include "../process/action/SendOrderToCookAction.h"
+#include "action/SendOrderToCookAction.h"
 
 using namespace std;
 
 Waiter::Waiter() {
+
+	sharedMemory.create(FILE_RESTAURANT, KEY_MEMORY);
+	this->memorySemaphore = new Semaphore(FILE_RESTAURANT,
+	KEY_MEMORY);
+
 	this->ordersFifo = new Fifo(ORDERS);
 	this->ordersLock = new LockFile(ORDERS_LOCK);
 }
 
 Waiter::~Waiter() {
-	delete ordersFifo;
+	sharedMemory.free();
 }
 
 void Waiter::run() {
 
-	SIGINT_Handler sigint_handler;
-	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
-
-	while (sigint_handler.getGracefulQuit() == 0) {
+	while (true) {
 
 		try {
 			order_t order = searchOrder();
 			if (order.type == 'd') {
-				requestOrder(order);
+				bool isMainProcess = requestOrder(order);
+				if (!isMainProcess) {
+					return;
+				}
+			} else if (order.type == 'p') {
+				chargeOrder(order);
 			} else {
 				deliverOrder(order);
 			}
 		} catch (exception& e) {
 			throw e;
 		}
-
-		sleep(10);
 	}
 }
 
@@ -71,7 +74,7 @@ order_t Waiter::searchOrder() {
 	return order;
 }
 
-void Waiter::requestOrder(order_t order) {
+bool Waiter::requestOrder(order_t order) {
 
 	Logger::getInstance()->insert(KEY_WAITER, STRINGS_TAKE_ORDER, order.pid);
 	sleep(TAKE_ORDER_TIME);
@@ -81,7 +84,20 @@ void Waiter::requestOrder(order_t order) {
 	if (id == 0) {
 		SendOrderToCookAction action;
 		action.send(order);
+		return false;
 	}
+
+	return true;
+}
+
+void Waiter::chargeOrder(order_t order) {
+	memorySemaphore->wait();
+	restaurant_t restaurant = sharedMemory.read();
+	restaurant.cash += 1;
+	Logger::getInstance()->insert(KEY_WAITER, STRINGS_MONEY_IN_CASH,
+			restaurant.cash);
+	sharedMemory.write(restaurant);
+	memorySemaphore->signal();
 }
 
 void Waiter::deliverOrder(order_t order) {
@@ -97,8 +113,5 @@ void Waiter::deliverOrder(order_t order) {
 	char response = 1;
 	Fifo* dinerFifo = new Fifo(ssDinerFifoName.str());
 	dinerFifo->_write(&response, sizeof(char));
-
-	dinerFifo->cerrar();
-	delete (dinerFifo);
 }
 

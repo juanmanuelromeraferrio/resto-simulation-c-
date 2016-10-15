@@ -31,28 +31,15 @@ Host::Host() {
 	this->dinerInDoorLock = new LockFile(DINER_IN_DOOR_LOCK);
 
 	this->memorySemaphore = new Semaphore(FILE_RESTAURANT,
-	KEY_MEMORY, 1);
+	KEY_MEMORY);
 }
 
 Host::~Host() {
 	sharedMemory.free();
-
-	this->dinerInDoorFifo->cerrar();
-	delete (this->dinerInDoorFifo);
-
-	this->dinerInLivingFifo->cerrar();
-	delete (this->dinerInLivingFifo);
-
-	delete (this->dinerInDoorLock);
 }
 
 void Host::run() {
-
-	SIGINT_Handler sigint_handler;
-	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
-
-	while (sigint_handler.getGracefulQuit() == 0) {
-
+	while (true) {
 		try {
 
 			unsigned long dinerPid = searchDinerInDoor();
@@ -61,7 +48,10 @@ void Host::run() {
 			if (freeTable) {
 				moveDinerToTable(dinerPid);
 			} else {
-				moveDinerToLiving(dinerPid);
+				bool isMainProcess = moveDinerToLiving(dinerPid);
+				if (!isMainProcess) {
+					return;
+				}
 			}
 
 		} catch (exception& e) {
@@ -123,12 +113,9 @@ void Host::moveDinerToTable(unsigned long dinerPid) {
 	char response = 1;
 	Fifo* dinerFifo = new Fifo(ssDinerFifoName.str());
 	dinerFifo->_write(&response, sizeof(char));
-	dinerFifo->cerrar();
-	delete (dinerFifo);
-
 }
 
-void Host::moveDinerToLiving(unsigned long dinerPid) {
+bool Host::moveDinerToLiving(unsigned long dinerPid) {
 
 	Logger::getInstance()->insert(KEY_HOST, STRINGS_MOVE_DINER_TO_LIVING,
 			dinerPid);
@@ -139,6 +126,9 @@ void Host::moveDinerToLiving(unsigned long dinerPid) {
 	if (id == 0) {
 		AddDinerToLivingLineAction action;
 		action.run(dinerPid);
+		return false;
 	}
+
+	return true;
 }
 

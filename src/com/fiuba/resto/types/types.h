@@ -12,6 +12,7 @@ struct restaurant_t {
 	unsigned int tables;
 	unsigned int busyTables;
 	unsigned int dinersInLiving;
+	unsigned int cash;
 
 };
 

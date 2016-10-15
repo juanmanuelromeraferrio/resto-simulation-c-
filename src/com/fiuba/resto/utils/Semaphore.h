@@ -15,6 +15,7 @@ private:
 
 public:
 	Semaphore(const char* name, char key, int initValue);
+	Semaphore(const char* name, char key);
 	virtual ~Semaphore();
 
 	int p();

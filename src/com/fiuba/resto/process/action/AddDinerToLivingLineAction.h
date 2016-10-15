@@ -26,7 +26,7 @@ private:
 public:
 	AddDinerToLivingLineAction();
 	virtual ~AddDinerToLivingLineAction();
-	void run(unsigned int dinerPid);
+	void run(unsigned long dinerPid);
 };
 
 #endif /* ADD_DINER_TO_LIVING_ACTION_H_ */

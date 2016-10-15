@@ -8,6 +8,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <cstdio>
 #include <iostream>
@@ -16,16 +17,24 @@
 #include "../process/Host.h"
 #include "../process/Waiter.h"
 #include "../process/Cook.h"
+#include "../process/Attendant.h"
 #include "../types/types.h"
 #include "../utils/Constant.h"
+#include "../logger/Logger.h"
+#include "../logger/Strings.h"
 #include "../utils/SharedMemory.h"
+#include "../utils/LockFile.h"
+#include "../utils/Fifo.h"
 
-static const char *optString = "id:q:sh?";
+static const char *optString = "icd:q:sh?";
 
 static const struct option longOpts[] = { { "init", no_argument, NULL, 'i' }, {
-		"diner", required_argument, NULL, 'd' }, { "query", required_argument,
+		"close", no_argument, NULL, 'c' }, { "diner", required_argument, NULL,
+		'd' }, { "query", required_argument,
 NULL, 'q' }, { "help", no_argument, NULL, 'h' }, { "simular",
 no_argument, NULL, 's' }, { NULL, no_argument, NULL, 0 } };
+
+void destroy(SharedMemory<restaurant_t>* sharedMemory);
 
 bool initSharedMemory(SharedMemory<restaurant_t>* sharedMemory, bool exclusive);
 
@@ -57,8 +66,7 @@ int main(int argc, char** argv) {
 				initValues(&sharedMemory, &restaurant);
 
 				// Creo Hosts
-
-				int hosts = 2;
+				int hosts = HOSTS;
 				int i = 0;
 				__pid_t id = 0;
 				for (; i < hosts; i++) {
@@ -75,7 +83,7 @@ int main(int argc, char** argv) {
 
 					// Creo Waiters
 
-					int waiters = 2;
+					int waiters = WAITERS;
 					int i = 0;
 					__pid_t id = 0;
 					for (; i < waiters; i++) {
@@ -88,7 +96,6 @@ int main(int argc, char** argv) {
 						Waiter waiter;
 						waiter.run();
 					} else {
-
 						// Creo Cook
 						id = fork();
 						if (id == 0) {
@@ -96,9 +103,19 @@ int main(int argc, char** argv) {
 							cook.run();
 
 						} else {
-							exit(0);
-						}
+							// Creo Attendant
+							id = fork();
+							if (id == 0) {
+								Attendant attendant;
+								attendant.run();
+							} else {
+								int childs = HOSTS + WAITERS + 1 + 1;
+								for (int i = 0; i < childs; i++) {
+									wait(NULL);
+								}
+							}
 
+						}
 					}
 				}
 			}
@@ -126,16 +143,42 @@ int main(int argc, char** argv) {
 				if (id == 0) {
 					Diner diner;
 					diner.run();
-				} else {
-					exit(0);
 				}
 
 			} else {
 				std::cout << "The system was not working" << std::endl;
 			}
 			break;
+
+		case 'q':
+			if (wasSharedMemoryInit(&sharedMemory)) {
+				sharedMemory.read();
+				switch (*optarg) {
+				case 'c':
+					Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH,
+							restaurant.cash);
+					break;
+				}
+
+				sharedMemory.free();
+
+			} else {
+				std::cout << "The system was not working" << std::endl;
+			}
+			break;
 		}
+
+		break;
 	}
+
+//	if (opt == 'i') {
+//		std::cout << " Destroy shared memory " << std::endl;
+//		destroy(&sharedMemory);
+//	}
+
+	unsigned long pid = getpid();
+	Logger::getInstance()->insert(KEY_RESTO, STRINGS_EXIT, pid);
+	return 0;
 }
 
 bool initSharedMemory(SharedMemory<restaurant_t>* sharedMemory,
@@ -175,10 +218,50 @@ bool wasSharedMemoryInit(SharedMemory<restaurant_t>* sharedMemory) {
 void initValues(SharedMemory<restaurant_t>* sharedMemory,
 		restaurant_t *restaurant) {
 
-	restaurant->tables = 1;
+	restaurant->tables = TABLES;
 	restaurant->busyTables = 0;
 	restaurant->dinersInLiving = 0;
+	restaurant->cash = 0;
 
 	sharedMemory->write(*restaurant);
+
+	new Semaphore(FILE_RESTAURANT,
+	KEY_MEMORY, 1);
+
+	new Semaphore(FILE_RESTAURANT,
+	KEY_TABLES, 0);
+}
+
+void destroy(SharedMemory<restaurant_t>* sharedMemory) {
+
+	unsigned long pid = getpid();
+	Logger::getInstance()->insert(KEY_RESTO, STRINGS_DESTROY, pid);
+
+	Fifo* fifo = new Fifo(DINER_IN_DOOR);
+	fifo->cerrar();
+	fifo->_destroy();
+
+	fifo = new Fifo(DINER_IN_LIVING);
+	fifo->cerrar();
+	fifo->_destroy();
+
+	fifo = new Fifo(ORDERS);
+	fifo->cerrar();
+	fifo->_destroy();
+
+	fifo = new Fifo(ORDERS_TO_COOK);
+	fifo->cerrar();
+	fifo->_destroy();
+
+	LockFile* lock = new LockFile(DINER_IN_DOOR_LOCK);
+	lock->~LockFile();
+
+	lock = new LockFile(DINER_IN_LIVING_LOCK);
+	lock->~LockFile();
+
+	lock = new LockFile(ORDERS_LOCK);
+	lock->~LockFile();
+
+	sharedMemory->free();
 }
 

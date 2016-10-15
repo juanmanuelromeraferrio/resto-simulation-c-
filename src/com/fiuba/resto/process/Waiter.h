@@ -10,8 +10,8 @@
 
 #include "../utils/Semaphore.h"
 #include "../utils/LockFile.h"
-#include "../utils/SharedMemory.h"
 #include "../types/types.h"
+#include "../utils/SharedMemory.h"
 
 #include <strings.h>
 #include "../utils/Fifo.h"
@@ -19,12 +19,15 @@
 class Waiter {
 private:
 
-	Fifo* ordersFifo;
+	SharedMemory<restaurant_t> sharedMemory;
+	Semaphore* memorySemaphore;
 
+	Fifo* ordersFifo;
 	LockFile* ordersLock;
 
 	order_t searchOrder();
-	void requestOrder(order_t order);
+	bool requestOrder(order_t order);
+	void chargeOrder(order_t order);
 	void deliverOrder(order_t order);
 
 public:

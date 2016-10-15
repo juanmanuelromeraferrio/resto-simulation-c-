@@ -15,7 +15,6 @@
 #include "../logger/Strings.h"
 #include "../types/types.h"
 #include "../utils/Constant.h"
-#include "../process/action/CheckDinerInLivingAction.h"
 
 using namespace std;
 
@@ -27,15 +26,21 @@ Diner::Diner() {
 	this->dinerInDoorFifo = new Fifo(DINER_IN_DOOR);
 	this->ordersFifo = new Fifo(ORDERS);
 
+	sharedMemory.create(FILE_RESTAURANT, KEY_MEMORY);
+
+	this->memorySemaphore = new Semaphore(FILE_RESTAURANT,
+	KEY_MEMORY);
+
+	this->tablesSemaphore = new Semaphore(FILE_RESTAURANT,
+	KEY_TABLES);
+
 }
 
 Diner::~Diner() {
-	delete dinerInDoorFifo;
-	delete ordersFifo;
-
 	dinerFifo->cerrar();
 	dinerFifo->_destroy();
-	delete dinerFifo;
+	dinerInDoorFifo->cerrar();
+	ordersFifo->cerrar();
 }
 
 void Diner::run() {
@@ -44,6 +49,7 @@ void Diner::run() {
 	order();
 	waitOrder();
 	eat();
+	pay();
 	leaveRestaurant();
 }
 
@@ -58,7 +64,6 @@ void Diner::waitToSeat() {
 
 	char wait;
 	dinerFifo->_read((char*) &wait, sizeof(char));
-
 	Logger::getInstance()->insert(KEY_DINER, STRINGS_SEAT);
 }
 
@@ -88,17 +93,36 @@ void Diner::eat() {
 	sleep(EAT_TIME);
 }
 
+void Diner::pay() {
+
+	unsigned long pid = getpid();
+	Logger::getInstance()->insert(KEY_DINER, STRINGS_WAITING_TO_PAY);
+
+	order_t order;
+	order.pid = pid;
+	order.type = 'p';
+
+	ordersFifo->_write((char *) &order, sizeof(order_t));
+}
+
 void Diner::leaveRestaurant() {
 	Logger::getInstance()->insert(KEY_DINER, STRINGS_LEAVING);
 
-	__pid_t id = fork();
+	this->memorySemaphore->wait();
+	restaurant_t restaurant = this->sharedMemory.read();
 
-	if (id == 0) {
-		CheckDinerInLivingAction action;
-		action.run();
+	if (restaurant.dinersInLiving > 0) {
+		tablesSemaphore->signal();
 	} else {
-		exit(0);
+		restaurant.busyTables--;
+
+		Logger::getInstance()->insert(KEY_DINER,
+		STRINGS_UPDATE_TABLE, restaurant.busyTables);
+
+		this->sharedMemory.write(restaurant);
 	}
+
+	this->memorySemaphore->signal();
 
 }
 

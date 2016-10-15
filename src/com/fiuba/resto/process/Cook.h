@@ -10,7 +10,6 @@
 
 #include "../utils/Semaphore.h"
 #include "../utils/LockFile.h"
-#include "../utils/SharedMemory.h"
 #include "../types/types.h"
 
 #include <strings.h>

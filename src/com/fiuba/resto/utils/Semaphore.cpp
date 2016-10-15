@@ -10,6 +10,14 @@ Semaphore::Semaphore(const char* name, char key, int initValue) {
 	this->init();
 }
 
+Semaphore::Semaphore(const char* name, char key) {
+
+	this->initValue = initValue;
+
+	key_t clave = ftok(name, key);
+	this->id = semget(clave, 1, 0666 | IPC_CREAT);
+}
+
 Semaphore::~Semaphore() {
 }
 

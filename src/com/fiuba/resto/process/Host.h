@@ -29,7 +29,7 @@ private:
 	unsigned long searchDinerInDoor();
 	bool existFreeTable();
 	void moveDinerToTable(unsigned long dinerPid);
-	void moveDinerToLiving(unsigned long dinerPid);
+	bool moveDinerToLiving(unsigned long dinerPid);
 
 public:
 	Host();

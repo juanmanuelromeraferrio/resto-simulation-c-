@@ -9,12 +9,13 @@
 #include <time.h>
 #include <unistd.h>
 
+#define KEY_RESTO "Resto"
 #define KEY_HOST "Host"
 #define KEY_DINER "Diner"
 #define KEY_WAITER "Waiter"
+#define KEY_ATTENDANT "Attendant"
 #define KEY_FIFO "Fifo"
 #define KEY_DINER_TO_LIVING_ACTION "Diner To Living Action"
-#define KEY_DINER_IN_LIVING_ACTION "Diner In Living Action"
 #define KEY_ORDER_TO_COOK_ACTION "Order To Cook Action"
 #define KEY_COOK "Cook"
 
