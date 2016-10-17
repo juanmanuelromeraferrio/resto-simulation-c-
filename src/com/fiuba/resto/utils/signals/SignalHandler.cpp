@@ -14,7 +14,7 @@ SignalHandler* SignalHandler :: getInstance () {
 	return instance;
 }
 
-void SignalHandler :: destruir () {
+void SignalHandler :: destroy () {
 	if ( instance != NULL ) {
 		delete ( instance );
 		instance = NULL;

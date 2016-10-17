@@ -6,25 +6,29 @@
  */
 
 #include <getopt.h>
-#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <csignal>
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 
+#include "../logger/Logger.h"
+#include "../logger/Strings.h"
+#include "../process/Attendant.h"
+#include "../process/Cook.h"
 #include "../process/Diner.h"
 #include "../process/Host.h"
 #include "../process/Waiter.h"
-#include "../process/Cook.h"
-#include "../process/Attendant.h"
 #include "../types/types.h"
 #include "../utils/Constant.h"
-#include "../logger/Logger.h"
-#include "../logger/Strings.h"
-#include "../utils/SharedMemory.h"
-#include "../utils/LockFile.h"
 #include "../utils/Fifo.h"
+#include "../utils/LockFile.h"
+#include "../utils/signals/SignalHandler.h"
+#include "../utils/signals/SIGINT_Handler.h"
+#include "../utils/Semaphore.h"
+#include "../utils/SharedMemory.h"
 
 static const char *optString = "icd:q:sh?";
 
@@ -33,6 +37,8 @@ static const struct option longOpts[] = { { "init", no_argument, NULL, 'i' }, {
 		'd' }, { "query", required_argument,
 NULL, 'q' }, { "help", no_argument, NULL, 'h' }, { "simular",
 no_argument, NULL, 's' }, { NULL, no_argument, NULL, 0 } };
+
+SharedMemory<restaurant_t> sharedMemory;
 
 void destroy(SharedMemory<restaurant_t>* sharedMemory);
 
@@ -43,12 +49,23 @@ bool wasSharedMemoryInit(SharedMemory<restaurant_t>* sharedMemory);
 void initValues(SharedMemory<restaurant_t>* sharedMemory,
 		restaurant_t *restaurant);
 
+void sigquit_handler(int sig) {
+
+	Logger::getInstance()->insert(KEY_RESTO,
+			"Finalizando Restaurant en 4 Segundos ....");
+
+	sleep(2);
+	kill(0, SIGINT);
+	sleep(2);
+	kill(0, SIGINT);
+
+}
+
 int main(int argc, char** argv) {
 
 //	Manual manual;
 //	manual.showInstructions();
 
-	SharedMemory<restaurant_t> sharedMemory;
 	restaurant_t restaurant;
 
 	FILE* file = fopen(FILE_RESTAURANT, "w");
@@ -57,6 +74,9 @@ int main(int argc, char** argv) {
 	int opt = 0;
 	int longIndex;
 
+	unsigned long resto_pid = getpid();
+	Logger::getInstance()->insert(KEY_RESTO, "Initing Resto ", resto_pid);
+
 	opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
 
 	while (opt != -1) {
@@ -64,6 +84,8 @@ int main(int argc, char** argv) {
 		case 'i':
 			if (initSharedMemory(&sharedMemory, true)) {
 				initValues(&sharedMemory, &restaurant);
+
+				signal(SIGQUIT, sigquit_handler);
 
 				// Creo Hosts
 				int hosts = HOSTS;
@@ -109,6 +131,11 @@ int main(int argc, char** argv) {
 								Attendant attendant;
 								attendant.run();
 							} else {
+
+								SIGINT_Handler sigint_handler;
+								SignalHandler::getInstance()->registerHandler(
+								SIGINT, &sigint_handler);
+
 								int childs = HOSTS + WAITERS + 1 + 1;
 								for (int i = 0; i < childs; i++) {
 									wait(NULL);
@@ -117,6 +144,11 @@ int main(int argc, char** argv) {
 
 						}
 					}
+				}
+
+				unsigned long pid = getpid();
+				if (pid == resto_pid) {
+					destroy(&sharedMemory);
 				}
 			}
 
@@ -143,6 +175,11 @@ int main(int argc, char** argv) {
 				if (id == 0) {
 					Diner diner;
 					diner.run();
+				} else {
+					for (int i = 0; i < diners; i++) {
+						wait(NULL);
+					}
+					sharedMemory.free();
 				}
 
 			} else {
@@ -171,13 +208,6 @@ int main(int argc, char** argv) {
 		break;
 	}
 
-//	if (opt == 'i') {
-//		std::cout << " Destroy shared memory " << std::endl;
-//		destroy(&sharedMemory);
-//	}
-
-	unsigned long pid = getpid();
-	Logger::getInstance()->insert(KEY_RESTO, STRINGS_EXIT, pid);
 	return 0;
 }
 
@@ -218,10 +248,13 @@ bool wasSharedMemoryInit(SharedMemory<restaurant_t>* sharedMemory) {
 void initValues(SharedMemory<restaurant_t>* sharedMemory,
 		restaurant_t *restaurant) {
 
+	restaurant->main_pid = getpid();
 	restaurant->tables = TABLES;
 	restaurant->busyTables = 0;
 	restaurant->dinersInLiving = 0;
 	restaurant->cash = 0;
+	restaurant->diners = 0;
+	restaurant->dinersInRestaurant = 0;
 
 	sharedMemory->write(*restaurant);
 
@@ -262,6 +295,18 @@ void destroy(SharedMemory<restaurant_t>* sharedMemory) {
 	lock = new LockFile(ORDERS_LOCK);
 	lock->~LockFile();
 
+	Semaphore* semaphore = new Semaphore(FILE_RESTAURANT,
+	KEY_MEMORY);
+
+	semaphore->destroy();
+
+	semaphore = new Semaphore(FILE_RESTAURANT,
+	KEY_TABLES);
+
+	semaphore->destroy();
+
 	sharedMemory->free();
+
+	Logger::getInstance()->insert(KEY_RESTO, STRINGS_FINISHED);
 }
 

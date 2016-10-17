@@ -39,25 +39,37 @@ Host::~Host() {
 }
 
 void Host::run() {
-	while (true) {
+
+	SIGINT_Handler sigint_handler;
+	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
+
+	while (sigint_handler.getGracefulQuit() == 0) {
 		try {
 
 			unsigned long dinerPid = searchDinerInDoor();
-
-			bool freeTable = existFreeTable();
-			if (freeTable) {
-				moveDinerToTable(dinerPid);
-			} else {
-				bool isMainProcess = moveDinerToLiving(dinerPid);
-				if (!isMainProcess) {
-					return;
+			bool isFull = dinersFull();
+			if (!isFull) {
+				bool freeTable = existFreeTable();
+				if (freeTable) {
+					moveDinerToTable(dinerPid);
+				} else {
+					bool isMainProcess = moveDinerToLiving(dinerPid);
+					if (!isMainProcess) {
+						return;
+					}
 				}
+			} else {
+				sendOutDiner(dinerPid);
 			}
 
 		} catch (exception& e) {
-			throw e;
+			if (sigint_handler.getGracefulQuit() == 0) {
+				throw e;
+			}
 		}
 	}
+
+	SignalHandler::destroy();
 }
 
 unsigned long Host::searchDinerInDoor() {
@@ -80,6 +92,25 @@ unsigned long Host::searchDinerInDoor() {
 	Logger::getInstance()->insert(KEY_HOST, STRINGS_SERVE_DINER, dinerPid);
 
 	return dinerPid;
+}
+
+bool Host::dinersFull() {
+	bool dinersComplete = true;
+
+	memorySemaphore->wait();
+
+	restaurant_t restaurant = sharedMemory.read();
+
+	if (restaurant.diners < DINERS_TOTAL) {
+		restaurant.diners++;
+		restaurant.dinersInRestaurant++;
+		sharedMemory.write(restaurant);
+		dinersComplete = false;
+	}
+
+	memorySemaphore->signal();
+
+	return dinersComplete;
 }
 
 bool Host::existFreeTable() {
@@ -130,5 +161,17 @@ bool Host::moveDinerToLiving(unsigned long dinerPid) {
 	}
 
 	return true;
+}
+
+void Host::sendOutDiner(unsigned long dinerPid) {
+
+	Logger::getInstance()->insert(KEY_HOST, STRINGS_SEND_OUT, dinerPid);
+
+	stringstream ssDinerFifoName;
+	ssDinerFifoName << DINERS_FIFO << dinerPid;
+
+	char response = 0;
+	Fifo* dinerFifo = new Fifo(ssDinerFifoName.str());
+	dinerFifo->_write(&response, sizeof(char));
 }
 

@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <sstream>
 #include <cstdlib>
+#include <signal.h>
 
 #include "../logger/Logger.h"
 #include "../logger/Strings.h"
@@ -41,16 +42,22 @@ Diner::~Diner() {
 	dinerFifo->_destroy();
 	dinerInDoorFifo->cerrar();
 	ordersFifo->cerrar();
+	sharedMemory.free();
 }
 
 void Diner::run() {
+
 	enterToRestaurant();
-	waitToSeat();
-	order();
-	waitOrder();
-	eat();
-	pay();
-	leaveRestaurant();
+
+	bool hasPlace = waitToSeat();
+
+	if (hasPlace) {
+		order();
+		waitOrder();
+		eat();
+		pay();
+		leaveRestaurant();
+	}
 }
 
 void Diner::enterToRestaurant() {
@@ -59,12 +66,18 @@ void Diner::enterToRestaurant() {
 	dinerInDoorFifo->_write((char *) &pid, sizeof(unsigned long));
 }
 
-void Diner::waitToSeat() {
+bool Diner::waitToSeat() {
 	Logger::getInstance()->insert(KEY_DINER, STRINGS_WAITING_FOR_A_TABLE);
 
 	char wait;
 	dinerFifo->_read((char*) &wait, sizeof(char));
-	Logger::getInstance()->insert(KEY_DINER, STRINGS_SEAT);
+
+	if (wait == 1) {
+		Logger::getInstance()->insert(KEY_DINER, STRINGS_SEAT);
+		return true;
+	} else {
+		return false;
+	}
 }
 
 void Diner::order() {
@@ -111,16 +124,23 @@ void Diner::leaveRestaurant() {
 	this->memorySemaphore->wait();
 	restaurant_t restaurant = this->sharedMemory.read();
 
+	restaurant.dinersInRestaurant--;
+
 	if (restaurant.dinersInLiving > 0) {
 		tablesSemaphore->signal();
 	} else {
 		restaurant.busyTables--;
-
 		Logger::getInstance()->insert(KEY_DINER,
 		STRINGS_UPDATE_TABLE, restaurant.busyTables);
 
-		this->sharedMemory.write(restaurant);
+		if (restaurant.diners == DINERS_TOTAL && restaurant.dinersInRestaurant == 0) {
+			Logger::getInstance()->insert(KEY_DINER,
+			STRINGS_LAST_DINER);
+			kill(restaurant.main_pid, SIGQUIT);
+		}
 	}
+
+	this->sharedMemory.write(restaurant);
 
 	this->memorySemaphore->signal();
 

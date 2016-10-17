@@ -27,7 +27,7 @@ private:
 	Semaphore* tablesSemaphore;
 
 	void enterToRestaurant();
-	void waitToSeat();
+	bool waitToSeat();
 	void order();
 	void waitOrder();
 	void eat();

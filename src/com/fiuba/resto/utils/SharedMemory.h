@@ -81,19 +81,14 @@ template<class T> int SharedMemory<T>::create(const char *file, char key,
 }
 
 template<class T> void SharedMemory<T>::free() {
-	// detach del bloque de memoria
 	shmdt((void *) this->dataPointer);
-
-//	std::stringstream log;
-//	log << "Libero memoria compartida " << this->shmId;
-//	Logger::getInstance()->insert(KEY_MEMORIA,log.str());
 
 	int procAdosados = this->cantidadProcesosAdosados();
 
 	if (procAdosados == 0) {
-		if (shmctl(this->shmId, IPC_RMID, NULL) == -1)
-			std::cerr << "Error al borrar memoria compartida : " << shmId
-					<< std::endl;
+		if (shmctl(this->shmId, IPC_RMID, NULL) == -1) {
+		}
+
 	}
 }
 

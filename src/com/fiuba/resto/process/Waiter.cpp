@@ -15,6 +15,8 @@
 #include "../logger/Logger.h"
 #include "../logger/Strings.h"
 #include "../utils/Constant.h"
+#include "../utils/signals/SignalHandler.h"
+#include "../utils/signals/SIGINT_Handler.h"
 #include "action/SendOrderToCookAction.h"
 
 using namespace std;
@@ -35,7 +37,10 @@ Waiter::~Waiter() {
 
 void Waiter::run() {
 
-	while (true) {
+	SIGINT_Handler sigint_handler;
+	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
+
+	while (sigint_handler.getGracefulQuit() == 0) {
 
 		try {
 			order_t order = searchOrder();
@@ -50,9 +55,13 @@ void Waiter::run() {
 				deliverOrder(order);
 			}
 		} catch (exception& e) {
-			throw e;
+			if (sigint_handler.getGracefulQuit() == 0) {
+				throw e;
+			}
 		}
 	}
+
+	SignalHandler::destroy();
 }
 
 order_t Waiter::searchOrder() {

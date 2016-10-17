@@ -5,6 +5,7 @@
 #define STRINGS_EXIT "Se termina el proceso "
 #define STRINGS_DESTROY "Destruyendo recursos del proceso "
 #define STRINGS_CASH "La plata en la caja es "
+#define STRINGS_FINISHED "Simulacion Finalizado"
 //Diner
 #define STRINGS_ENTER_RESTO "Entra al restaurant"
 #define STRINGS_WAITING_FOR_A_TABLE "Espera por una mesa"
@@ -14,10 +15,13 @@
 #define STRINGS_EATING "Esta comiendo"
 #define STRINGS_WAITING_TO_PAY "Espera a un mozo para pagar"
 #define STRINGS_LEAVING "Se va del restaurant"
+#define STRINGS_UPDATE_TABLE "Actualiza mesas ocupadas a "
+#define STRINGS_LAST_DINER "Ultimo comensal saliendo "
 
 //Host
 #define STRINGS_SERVE_DINER "Atiende al Comensal "
 #define STRINGS_ASSIGN_TABLE "Asigna Mesa al Comensal "
+#define STRINGS_SEND_OUT "Echa al Comensal "
 #define STRINGS_MOVE_DINER_TO_LIVING "Acompaña al living al Comensal "
 
 //Waiter
@@ -27,9 +31,7 @@
 
 //AddDinerToLivingAction
 #define STRINGS_ADD_DINER_TO_LIVING "Se agrega a la lista del living al Comensal "
-//CheckDinerInLivingAction
-#define STRINGS_CHECK_DINER_IN_LIVING "Se chequea si hay algun comensal en el living "
-#define STRINGS_UPDATE_TABLE "Actualiza mesas ocupadas a "
+
 //SendOrderToCookAction
 #define STRINGS_SEND_ORDER_TO_COOK "Se agrega a la lista de cocina la orden del Comensal "
 

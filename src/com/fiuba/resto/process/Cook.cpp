@@ -26,22 +26,28 @@ Cook::Cook() {
 }
 
 Cook::~Cook() {
-	delete ordersFifo;
-	delete ordersToCookFifo;
+	ordersFifo->cerrar();
+	ordersToCookFifo->cerrar();
 }
 
 void Cook::run() {
 
-	while (true) {
+	SIGINT_Handler sigint_handler;
+	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
 
+	while (sigint_handler.getGracefulQuit() == 0) {
 		try {
 			order_t order = searchOrder();
 			cookOrder(order);
 			sendOrder(order);
 		} catch (exception& e) {
-			throw e;
+			if (sigint_handler.getGracefulQuit() == 0) {
+				throw e;
+			}
 		}
 	}
+
+	SignalHandler::destroy();
 }
 
 order_t Cook::searchOrder() {

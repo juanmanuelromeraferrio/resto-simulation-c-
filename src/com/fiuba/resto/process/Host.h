@@ -27,7 +27,9 @@ private:
 	Semaphore* memorySemaphore;
 
 	unsigned long searchDinerInDoor();
+	bool dinersFull();
 	bool existFreeTable();
+	void sendOutDiner(unsigned long dinerPid);
 	void moveDinerToTable(unsigned long dinerPid);
 	bool moveDinerToLiving(unsigned long dinerPid);
 

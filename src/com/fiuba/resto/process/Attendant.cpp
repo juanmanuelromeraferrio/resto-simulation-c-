@@ -28,7 +28,6 @@ Attendant::Attendant() {
 	KEY_TABLES);
 	this->memorySemaphore = new Semaphore(FILE_RESTAURANT,
 	KEY_MEMORY);
-
 }
 
 Attendant::~Attendant() {
@@ -37,9 +36,20 @@ Attendant::~Attendant() {
 
 void Attendant::run() {
 
-	while (true) {
-		asignTable();
+	SIGINT_Handler sigint_handler;
+	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
+
+	while (sigint_handler.getGracefulQuit() == 0) {
+		try {
+			asignTable();
+		} catch (exception& e) {
+			if (sigint_handler.getGracefulQuit() == 0) {
+				throw e;
+			}
+		}
 	}
+
+	SignalHandler::destroy();
 }
 
 void Attendant::asignTable() {

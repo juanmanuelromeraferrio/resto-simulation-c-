@@ -17,7 +17,7 @@ class SignalHandler {
 
 	public:
 		static SignalHandler* getInstance ();
-		static void destruir ();
+		static void destroy ();
 		EventHandler* registerHandler ( int signum,EventHandler* eh );
 		int removerHandler ( int signum );
 

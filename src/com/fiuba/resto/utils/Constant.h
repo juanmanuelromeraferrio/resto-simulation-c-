@@ -31,7 +31,7 @@
 #define MOVE_TO_LIVING_TIME 0
 
 #define THINK_ORDER_TIME 0
-#define EAT_TIME 5
+#define EAT_TIME 2
 
 #define TAKE_ORDER_TIME 0
 #define DELIVER_ORDER_TIME 0
@@ -40,9 +40,10 @@
 
 
 //CONFIGURATION
-#define HOSTS 1
-#define WAITERS 1
-#define TABLES 1
+#define HOSTS 4
+#define WAITERS 4
+#define TABLES 5
+#define DINERS_TOTAL 5
 
 
 

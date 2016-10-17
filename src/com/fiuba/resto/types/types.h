@@ -9,14 +9,17 @@
 #define TYPES_H_
 
 struct restaurant_t {
+	unsigned long main_pid;
 	unsigned int tables;
 	unsigned int busyTables;
 	unsigned int dinersInLiving;
 	unsigned int cash;
+	unsigned int diners;
+	unsigned int dinersInRestaurant;
 
 };
 
-struct order_t{
+struct order_t {
 	char type;
 	pid_t pid;
 };
