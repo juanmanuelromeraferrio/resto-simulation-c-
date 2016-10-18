@@ -31,3 +31,12 @@
 
 # Clion build
 /.idea/*
+
+#CMAKE files
+CMakeCache.txt
+/CMakeFiles/*
+Makefile
+cmake_install.cmake
+
+#EXE
+resto_simulation_c
