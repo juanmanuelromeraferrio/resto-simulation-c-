@@ -16,6 +16,7 @@ struct restaurant_t {
 	unsigned int cash;
 	unsigned int diners;
 	unsigned int dinersInRestaurant;
+	unsigned int money_not_cashed_yet;
 
 };
 
@@ -25,3 +26,4 @@ struct order_t {
 };
 
 #endif /* TYPES_H_ */
+
