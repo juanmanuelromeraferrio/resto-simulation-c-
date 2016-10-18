@@ -3,5 +3,22 @@ project(resto_simulation_c)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES src/com/fiuba/resto/main/RestoMain.cpp src/com/fiuba/resto/types/types.h src/com/fiuba/resto/process/action/AddDinerToLivingLineAction.cpp src/com/fiuba/resto/process/action/AddDinerToLivingLineAction.h src/com/fiuba/resto/process/action/CheckDinerInLivingAction.cpp src/com/fiuba/resto/process/action/CheckDinerInLivingAction.h src/com/fiuba/resto/process/action/SendOrderToCookAction.cpp src/com/fiuba/resto/process/action/SendOrderToCookAction.h src/com/fiuba/resto/process/Cook.cpp src/com/fiuba/resto/process/Cook.h src/com/fiuba/resto/process/Diner.cpp src/com/fiuba/resto/process/Diner.h src/com/fiuba/resto/process/Host.cpp src/com/fiuba/resto/process/Host.h src/com/fiuba/resto/process/Waiter.cpp src/com/fiuba/resto/process/Waiter.h src/com/fiuba/resto/logger/Logger.cpp src/com/fiuba/resto/logger/Logger.h src/com/fiuba/resto/logger/Strings.h src/com/fiuba/resto/utils/signals/SignalHandler.cpp src/com/fiuba/resto/utils/signals/SignalHandler.h src/com/fiuba/resto/utils/signals/EventHandler.h src/com/fiuba/resto/utils/signals/SIGINT_Handler.h src/com/fiuba/resto/utils/Constant.h src/com/fiuba/resto/utils/Fifo.cpp src/com/fiuba/resto/utils/Fifo.h src/com/fiuba/resto/utils/LockFile.cpp src/com/fiuba/resto/utils/LockFile.h src/com/fiuba/resto/utils/Manual.cpp src/com/fiuba/resto/utils/Manual.h src/com/fiuba/resto/utils/Semaphore.cpp src/com/fiuba/resto/utils/Semaphore.h src/com/fiuba/resto/utils/SharedMemory.h)
-add_executable(resto_simulation_c ${SOURCE_FILES})
+file(GLOB_RECURSE LOGGER_SOURCE "src/com/fiuba/resto/logger/*.cpp")
+file(GLOB_RECURSE PROCESS_SOURCE "src/com/fiuba/resto/process/*.cpp")
+file(GLOB_RECURSE PROCESS_ACTION_SOURCE "src/com/fiuba/resto/process/action/*.cpp")
+file(GLOB_RECURSE TYPES_SOURCE "src/com/fiuba/resto/types/*.cpp")
+file(GLOB_RECURSE UTILS_SOURCE "src/com/fiuba/resto/utils/*.cpp")
+file(GLOB_RECURSE UTILS_SIGNALS_SOURCE "src/com/fiuba/resto/utils/signals/*.cpp")
+
+add_library(resto ${LOGGER_SOURCE} ${PROCESS_SOURCE} ${PROCESS_ACTION_SOURCE} ${TYPES_SOURCE} ${UTILS_SOURCE} ${UTILS_SIGNALS_SOURCE})
+
+add_executable(resto_simulation_c ${CMAKE_CURRENT_SOURCE_DIR}/src/com/fiuba/resto/main/RestoMain.cpp)
+
+target_link_libraries(resto_simulation_c resto)
+
+target_include_directories(resto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/com/fiuba/resto/logger)
+target_include_directories(resto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/com/fiuba/resto/process)
+target_include_directories(resto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/com/fiuba/resto/process/action)
+target_include_directories(resto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/com/fiuba/resto/types)
+target_include_directories(resto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/com/fiuba/resto/utils)
+target_include_directories(resto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/com/fiuba/resto/utils/signals)
