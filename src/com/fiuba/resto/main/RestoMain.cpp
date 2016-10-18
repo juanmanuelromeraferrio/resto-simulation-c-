@@ -173,7 +173,6 @@ int main(int argc, char** argv) {
 						for (int i = 0; i < diners; i++) {
 							wait(NULL);
 						}
-						//sharedMemory_d.liberar();
 					}
 				} catch ( std::string& mensaje ) {
 					std::cerr << mensaje << std::endl;
@@ -184,7 +183,6 @@ int main(int argc, char** argv) {
 				try {
 					MemoriaCompartida2<restaurant_t> buffer_consulta ( FILE_RESTAURANT,KEY_MEMORY);
 					restaurant_t consulta_restaurant = buffer_consulta.leer();
-					//buffer_consulta.liberar();
 					if (consulta_restaurant.isOpen) {
 						int opcion = 0;
 						if (optarg != NULL) opcion = atoi(optarg);
@@ -274,8 +272,6 @@ int main(int argc, char** argv) {
 
 		semaphore = new Semaphore(FILE_RESTAURANT, KEY_TABLES);
 		semaphore->destroy();
-
-		//sharedMemory->liberar();
 
 		Logger::getInstance()->insert(KEY_RESTO, STRINGS_FINISHED);
 	}
