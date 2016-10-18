@@ -43,13 +43,7 @@ static const struct option longOpts[] = {
 	{ NULL, no_argument, NULL, 0 }
 };
 
-//SharedMemory<restaurant_t> sharedMemory;
-
 void destroy(MemoriaCompartida2<restaurant_t>* sharedMemory);
-
-bool initSharedMemory(SharedMemory<restaurant_t>* sharedMemory, bool exclusive); //DEPRECATED
-
-bool wasSharedMemoryInit(SharedMemory<restaurant_t>* sharedMemory); //DEPRECATED
 
 void initValues(MemoriaCompartida2<restaurant_t>* sharedMemory,	restaurant_t *restaurant);
 
@@ -133,7 +127,7 @@ int main(int argc, char** argv) {
 								SignalHandler::getInstance()->registerHandler(
 									SIGINT, &sigint_handler);
 
-									int childs = HOSTS + WAITERS + 1 + 1;
+									int childs = HOSTS + WAITERS + 1 + 1; //1 cook y 1 attendant
 									for (int i = 0; i < childs; i++) {
 										wait(NULL);
 									}
@@ -179,7 +173,7 @@ int main(int argc, char** argv) {
 						for (int i = 0; i < diners; i++) {
 							wait(NULL);
 						}
-						sharedMemory_d.liberar();
+						//sharedMemory_d.liberar();
 					}
 				} catch ( std::string& mensaje ) {
 					std::cerr << mensaje << std::endl;
@@ -191,23 +185,30 @@ int main(int argc, char** argv) {
 					MemoriaCompartida2<restaurant_t> buffer_consulta ( FILE_RESTAURANT,KEY_MEMORY);
 					restaurant_t consulta_restaurant = buffer_consulta.leer();
 					//buffer_consulta.liberar();
-					int opcion = 0;
-					if (optarg != NULL) {
-						opcion = atoi(optarg);
-					}
-					switch (opcion) {
-						case 1:
-						Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH, consulta_restaurant.cash);
-						break;
-						case 2:
-						Logger::getInstance()->insert(KEY_RESTO, STRINGS_DINERS_IN_LIVING, consulta_restaurant.dinersInLiving);
-						break;
-						case 3:
-						Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH_LOST, consulta_restaurant.money_not_cashed_yet);
-						break;
-						default:
-						Logger::getInstance()->insert(KEY_RESTO, "Consultar: \n 1 - Caja \n 2 - Gente en living \n 3 - Perdidas\n");
-						break;
+					if (consulta_restaurant.isOpen) {
+						int opcion = 0;
+						if (optarg != NULL) opcion = atoi(optarg);
+						switch (opcion) {
+							case 1:
+							Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH, consulta_restaurant.cash);
+							break;
+							case 2:
+							Logger::getInstance()->insert(KEY_RESTO, STRINGS_DINERS_IN_LIVING, consulta_restaurant.dinersInLiving);
+							break;
+							case 3:
+							Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH_LOST, consulta_restaurant.money_not_cashed_yet);
+							break;
+							case 4:
+							Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH, consulta_restaurant.cash);
+							Logger::getInstance()->insert(KEY_RESTO, STRINGS_DINERS_IN_LIVING, consulta_restaurant.dinersInLiving);
+							Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH_LOST, consulta_restaurant.money_not_cashed_yet);
+							break;
+							default:
+							Logger::getInstance()->insert(KEY_RESTO, "Consultar: \n 1) Caja \n 2) Gente en living \n 3) Perdidas\n 4) Todo");
+							break;
+						}
+					} else {
+						Logger::getInstance()->insert(KEY_RESTO,"Restaurant cerrado - No puede hacer consultas");
 					}
 				} catch ( std::string& mensaje ) {
 					std::cerr << mensaje << std::endl;
@@ -221,44 +222,6 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
-	//DEPRECATED
-	bool initSharedMemory(SharedMemory<restaurant_t>* sharedMemory,	bool exclusive) {
-		int state = sharedMemory->create(FILE_RESTAURANT, KEY_MEMORY, exclusive);
-		bool result = false;
-
-		switch (state) {
-			case ERROR_FTOK:
-			Logger::getInstance()->insert(KEY_RESTO, "ERROR_FTOK");
-			break;
-			case ERROR_SHMAT:
-			Logger::getInstance()->insert(KEY_RESTO, "ERROR_SHMAT");
-			break;
-			case ERROR_SHMGET:
-			Logger::getInstance()->insert(KEY_RESTO, "ERROR_SHMGET");
-			break;
-			case SHM_OK:
-			Logger::getInstance()->insert(KEY_RESTO, "SHM_OK");
-			result = true;
-			break;
-			default:
-			Logger::getInstance()->insert(KEY_RESTO, "UNEXPECTED ERROR");
-			break;
-		}
-
-		return result;
-	}
-
-	//DEPRECATED
-	bool wasSharedMemoryInit(SharedMemory<restaurant_t>* sharedMemory) {
-		int state = sharedMemory->create(FILE_RESTAURANT, KEY_MEMORY, true);
-		if (state != SHM_OK) {
-			return true;
-		} else {
-			sharedMemory->free();
-			return false;
-		}
-	}
-
 	void initValues(MemoriaCompartida2<restaurant_t>* sharedMemory,restaurant_t *restaurant) {
 		restaurant->main_pid = getpid();
 		restaurant->tables = TABLES;
@@ -268,6 +231,7 @@ int main(int argc, char** argv) {
 		restaurant->diners = 0;
 		restaurant->dinersInRestaurant = 0;
 		restaurant->money_not_cashed_yet = 0;
+		restaurant->isOpen = true;
 
 		sharedMemory->escribir(*restaurant);
 
@@ -315,4 +279,3 @@ int main(int argc, char** argv) {
 
 		Logger::getInstance()->insert(KEY_RESTO, STRINGS_FINISHED);
 	}
-

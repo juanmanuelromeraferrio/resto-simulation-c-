@@ -4,7 +4,7 @@
 //Resto
 #define STRINGS_EXIT "Se termina el proceso "
 #define STRINGS_DESTROY "Destruyendo recursos del proceso "
-#define STRINGS_CASH "La plata en la caja es "
+#define STRINGS_CASH "La plata en la caja es: $"
 #define STRINGS_FINISHED "Simulacion Finalizado"
 #define STRINGS_DINERS_IN_LIVING "Gente esperando en el living: "
 #define STRINGS_CASH_LOST "Hubieron perdidas por: $"
@@ -43,4 +43,3 @@
 #define STRINGS_ERROR_FIFO "Error leyendo fifo resultado "
 
 #endif /** STRINGS_H */
-

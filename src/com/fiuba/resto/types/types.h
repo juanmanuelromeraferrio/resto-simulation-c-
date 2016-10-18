@@ -17,7 +17,7 @@ struct restaurant_t {
 	unsigned int diners;
 	unsigned int dinersInRestaurant;
 	unsigned int money_not_cashed_yet;
-
+	bool isOpen = false;
 };
 
 struct order_t {
@@ -26,4 +26,3 @@ struct order_t {
 };
 
 #endif /* TYPES_H_ */
-
