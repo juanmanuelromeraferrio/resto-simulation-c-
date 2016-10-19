@@ -8,6 +8,8 @@
 #ifndef CONSTANTES_H_
 #define CONSTANTES_H_
 
+#include "../parser/Parser.h"
+
 //FIFOS
 #define	DINER_IN_DOOR	"/tmp/resto/diner_in_door"
 #define	DINER_IN_LIVING "/tmp/resto/diner_in_living"
@@ -40,13 +42,15 @@
 
 
 //CONFIGURATION
-#define HOSTS 4
-#define WAITERS 4
-#define TABLES 5
-#define DINERS_TOTAL 5
-
-
-
-
+/*
+const int HOSTS = Parser::getInstance()->getIntValue("hosts");
+const int WAITERS = Parser::getInstance()->getIntValue("waiters");
+const int TABLES = Parser::getInstance()->getIntValue("tables");
+const int DINERS_TOTAL = Parser::getInstance()->getIntValue("diners_total");
+*/
+const int HOSTS = 3;
+const int WAITERS = 5;
+const int TABLES = 15;
+const int DINERS_TOTAL = 100;
 
 #endif /* CONSTANTES_H_ */

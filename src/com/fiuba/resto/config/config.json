@@ -1,0 +1,6 @@
+{
+  "hosts" : 3,
+  "waiters" : 5,
+  "tables" : 15,
+  "diners_total" : 100
+}
