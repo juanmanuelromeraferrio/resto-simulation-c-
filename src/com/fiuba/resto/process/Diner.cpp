@@ -145,4 +145,3 @@ void Diner::leaveRestaurant() {
 	this->memorySemaphore->signal();
 
 }
-

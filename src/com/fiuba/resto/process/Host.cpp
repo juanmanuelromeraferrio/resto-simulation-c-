@@ -174,4 +174,3 @@ void Host::sendOutDiner(unsigned long dinerPid) {
 	Fifo* dinerFifo = new Fifo(ssDinerFifoName.str());
 	dinerFifo->_write(&response, sizeof(char));
 }
-

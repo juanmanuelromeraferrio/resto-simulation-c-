@@ -42,15 +42,11 @@
 
 
 //CONFIGURATION
-/*
 const int HOSTS = Parser::getInstance()->getIntValue("hosts");
 const int WAITERS = Parser::getInstance()->getIntValue("waiters");
 const int TABLES = Parser::getInstance()->getIntValue("tables");
 const int DINERS_TOTAL = Parser::getInstance()->getIntValue("diners_total");
-*/
-const int HOSTS = 3;
-const int WAITERS = 5;
-const int TABLES = 15;
-const int DINERS_TOTAL = 100;
+
+#define FILE_CONFIG "src/com/fiuba/resto/config/config.json"
 
 #endif /* CONSTANTES_H_ */

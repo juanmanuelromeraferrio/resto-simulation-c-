@@ -1,6 +1,6 @@
 {
-  "hosts" : 3,
-  "waiters" : 5,
-  "tables" : 15,
-  "diners_total" : 100
+  "hosts" : 4,
+  "waiters" : 4,
+  "tables" : 5,
+  "diners_total" : 5
 }

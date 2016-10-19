@@ -1,10 +1,11 @@
 #include "Parser.h"
+#include "../utils/Constant.h"
 
 Parser* Parser::parser = NULL;
 
 Parser::Parser() {
 	//TODO: check errors
-	fs.open ("../config/config.json", std::fstream::in);
+	fs.open (FILE_CONFIG, std::fstream::in);
 	fs>>js;
 }
 
