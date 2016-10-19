@@ -50,8 +50,10 @@ void Waiter::run() {
 					return;
 				}
 			} else if (order.type == 'p') {
+				//si piden la cuenta
 				chargeOrder(order);
 			} else {
+				//Es una orden del cocinero
 				deliverOrder(order);
 			}
 		} catch (exception& e) {
@@ -102,17 +104,15 @@ bool Waiter::requestOrder(order_t order) {
 void Waiter::chargeOrder(order_t order) {
 	memorySemaphore->wait();
 	restaurant_t restaurant = sharedMemory.read();
-	restaurant.cash += 1;
-	Logger::getInstance()->insert(KEY_WAITER, STRINGS_MONEY_IN_CASH,
-			restaurant.cash);
+	restaurant.cash += order.toPay;
+	Logger::getInstance()->insert(KEY_WAITER, STRINGS_MONEY_IN_CASH, restaurant.cash);
 	sharedMemory.write(restaurant);
 	memorySemaphore->signal();
 }
 
 void Waiter::deliverOrder(order_t order) {
 
-	Logger::getInstance()->insert(KEY_WAITER, STRINGS_DISPATCH_ORDER,
-			order.pid);
+	Logger::getInstance()->insert(KEY_WAITER, STRINGS_DISPATCH_ORDER, order.pid);
 
 	sleep(DELIVER_ORDER_TIME);
 

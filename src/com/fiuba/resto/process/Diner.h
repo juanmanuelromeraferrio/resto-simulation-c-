@@ -25,6 +25,7 @@ private:
 	SharedMemory<restaurant_t> sharedMemory;
 	Semaphore* memorySemaphore;
 	Semaphore* tablesSemaphore;
+	unsigned int toPay;
 
 	void enterToRestaurant();
 	bool waitToSeat();
@@ -33,6 +34,10 @@ private:
 	void eat();
 	void pay();
 	void leaveRestaurant();
+	int repeatOrder() {
+		return rand() % 3 + 1;
+	}
+	unsigned int menuPrice();
 
 public:
 	Diner();

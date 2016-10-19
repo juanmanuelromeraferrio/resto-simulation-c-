@@ -35,6 +35,8 @@ Diner::Diner() {
 	this->tablesSemaphore = new Semaphore(FILE_RESTAURANT,
 	KEY_TABLES);
 
+	this->toPay = 0;
+
 }
 
 Diner::~Diner() {
@@ -45,6 +47,11 @@ Diner::~Diner() {
 	sharedMemory.free();
 }
 
+unsigned int Diner::menuPrice() {
+	//TODO: agregar funcion para elegir menu random desde config.json
+	return 10;
+}
+
 void Diner::run() {
 
 	enterToRestaurant();
@@ -52,9 +59,12 @@ void Diner::run() {
 	bool hasPlace = waitToSeat();
 
 	if (hasPlace) {
-		order();
-		waitOrder();
-		eat();
+		srand ( time(NULL) );
+		for (int i = 0; i < repeatOrder(); ++i) {
+			order();
+			waitOrder();
+			eat();
+		}
 		pay();
 		leaveRestaurant();
 	}
@@ -87,9 +97,13 @@ void Diner::order() {
 	unsigned long pid = getpid();
 	Logger::getInstance()->insert(KEY_DINER, STRINGS_WAITING_TO_ORDER);
 
+	//Una vez que hace el pedido, se suma a la cantidad a pagar
+	this->toPay += this->menuPrice();
+
 	order_t order;
 	order.pid = pid;
 	order.type = 'd';
+	order.toPay = 0;
 
 	ordersFifo->_write((char *) &order, sizeof(order_t));
 }
@@ -114,6 +128,7 @@ void Diner::pay() {
 	order_t order;
 	order.pid = pid;
 	order.type = 'p';
+	order.toPay = this->toPay;
 
 	ordersFifo->_write((char *) &order, sizeof(order_t));
 }
@@ -134,8 +149,7 @@ void Diner::leaveRestaurant() {
 		STRINGS_UPDATE_TABLE, restaurant.busyTables);
 
 		if (restaurant.diners == DINERS_TOTAL && restaurant.dinersInRestaurant == 0) {
-			Logger::getInstance()->insert(KEY_DINER,
-			STRINGS_LAST_DINER);
+			Logger::getInstance()->insert(KEY_DINER,STRINGS_LAST_DINER);
 			kill(restaurant.main_pid, SIGQUIT);
 		}
 	}
@@ -143,5 +157,4 @@ void Diner::leaveRestaurant() {
 	this->sharedMemory.write(restaurant);
 
 	this->memorySemaphore->signal();
-
 }

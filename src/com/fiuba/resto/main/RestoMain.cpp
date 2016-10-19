@@ -1,10 +1,3 @@
-/*
-* RestoMain.cpp
-*
-*  Created on: 24 sep. 2016
-*      Author: jferrio
-*/
-
 #include <getopt.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -124,153 +117,152 @@ int main(int argc, char** argv) {
 							} else {
 
 								SIGINT_Handler sigint_handler;
-								SignalHandler::getInstance()->registerHandler(
-									SIGINT, &sigint_handler);
+								SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
 
-									int childs = HOSTS + WAITERS + 1 + 1; //1 cook y 1 attendant
-									for (int i = 0; i < childs; i++) {
-										wait(NULL);
-									}
+								int childs = HOSTS + WAITERS + 1 + 1; //1 cook y 1 attendant
+								for (int i = 0; i < childs; i++) {
+									wait(NULL);
 								}
 							}
 						}
 					}
-
-					unsigned long pid = getpid();
-					if (pid == resto_pid) {
-						destroy(&sharedMemory_i);
-					}
-
-				} catch ( std::string& mensaje ) {
-					std::cerr << mensaje << std::endl;
 				}
-				break;
 
-				case 'd':
-				try {
-					MemoriaCompartida2<restaurant_t> sharedMemory_d ( FILE_RESTAURANT,KEY_MEMORY);
-					int diners = 0;
-
-					if (optarg != NULL) {
-						diners = atoi(optarg);
-					}
-
-					int i = 0;
-					__pid_t id = 0;
-
-					for (; i < diners; i++) {
-						id = fork();
-						if (id == 0) {
-							break;
-						}
-					}
-
-					if (id == 0) {
-						Diner diner;
-						diner.run();
-					} else {
-						for (int i = 0; i < diners; i++) {
-							wait(NULL);
-						}
-					}
-				} catch ( std::string& mensaje ) {
-					std::cerr << mensaje << std::endl;
+				unsigned long pid = getpid();
+				if (pid == resto_pid) {
+					destroy(&sharedMemory_i);
 				}
-				break;
 
-				case 'q':
-				try {
-					MemoriaCompartida2<restaurant_t> buffer_consulta ( FILE_RESTAURANT,KEY_MEMORY);
-					restaurant_t consulta_restaurant = buffer_consulta.leer();
-					if (consulta_restaurant.isOpen) {
-						int opcion = 0;
-						if (optarg != NULL) opcion = atoi(optarg);
-						switch (opcion) {
-							case 1:
-							Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH, consulta_restaurant.cash);
-							break;
-							case 2:
-							Logger::getInstance()->insert(KEY_RESTO, STRINGS_DINERS_IN_LIVING, consulta_restaurant.dinersInLiving);
-							break;
-							case 3:
-							Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH_LOST, consulta_restaurant.money_not_cashed_yet);
-							break;
-							case 4:
-							Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH, consulta_restaurant.cash);
-							Logger::getInstance()->insert(KEY_RESTO, STRINGS_DINERS_IN_LIVING, consulta_restaurant.dinersInLiving);
-							Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH_LOST, consulta_restaurant.money_not_cashed_yet);
-							break;
-							default:
-							Logger::getInstance()->insert(KEY_RESTO, "Consultar: \n 1) Caja \n 2) Gente en living \n 3) Perdidas\n 4) Todo");
-							break;
-						}
-					} else {
-						Logger::getInstance()->insert(KEY_RESTO,"Restaurant cerrado - No puede hacer consultas");
-					}
-				} catch ( std::string& mensaje ) {
-					std::cerr << mensaje << std::endl;
-				}
-				break;
+			} catch ( std::string& mensaje ) {
+				std::cerr << mensaje << std::endl;
 			}
+			break;
 
+			case 'd':
+			try {
+				MemoriaCompartida2<restaurant_t> sharedMemory_d ( FILE_RESTAURANT,KEY_MEMORY);
+				int diners = 0;
+
+				if (optarg != NULL) {
+					diners = atoi(optarg);
+				}
+
+				int i = 0;
+				__pid_t id = 0;
+
+				for (; i < diners; i++) {
+					id = fork();
+					if (id == 0) {
+						break;
+					}
+				}
+
+				if (id == 0) {
+					Diner diner;
+					diner.run();
+				} else {
+					for (int i = 0; i < diners; i++) {
+						wait(NULL);
+					}
+				}
+			} catch ( std::string& mensaje ) {
+				std::cerr << mensaje << std::endl;
+			}
+			break;
+
+			case 'q':
+			try {
+				MemoriaCompartida2<restaurant_t> buffer_consulta ( FILE_RESTAURANT,KEY_MEMORY);
+				restaurant_t consulta_restaurant = buffer_consulta.leer();
+				if (consulta_restaurant.isOpen) {
+					int opcion = 0;
+					if (optarg != NULL) opcion = atoi(optarg);
+					switch (opcion) {
+						case 1:
+						Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH, consulta_restaurant.cash);
+						break;
+						case 2:
+						Logger::getInstance()->insert(KEY_RESTO, STRINGS_DINERS_IN_LIVING, consulta_restaurant.dinersInLiving);
+						break;
+						case 3:
+						Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH_LOST, consulta_restaurant.money_not_cashed_yet);
+						break;
+						case 4:
+						Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH, consulta_restaurant.cash);
+						Logger::getInstance()->insert(KEY_RESTO, STRINGS_DINERS_IN_LIVING, consulta_restaurant.dinersInLiving);
+						Logger::getInstance()->insert(KEY_RESTO, STRINGS_CASH_LOST, consulta_restaurant.money_not_cashed_yet);
+						break;
+						default:
+						Logger::getInstance()->insert(KEY_RESTO, "Consultar: \n 1) Caja \n 2) Gente en living \n 3) Perdidas\n 4) Todo");
+						break;
+					}
+				} else {
+					Logger::getInstance()->insert(KEY_RESTO,"Restaurant cerrado - No puede hacer consultas");
+				}
+			} catch ( std::string& mensaje ) {
+				std::cerr << mensaje << std::endl;
+			}
 			break;
 		}
 
-		return 0;
+		break;
 	}
 
-	void initValues(MemoriaCompartida2<restaurant_t>* sharedMemory,restaurant_t *restaurant) {
-		restaurant->main_pid = getpid();
-		restaurant->tables = TABLES;
-		restaurant->busyTables = 0;
-		restaurant->dinersInLiving = 0;
-		restaurant->cash = 0;
-		restaurant->diners = 0;
-		restaurant->dinersInRestaurant = 0;
-		restaurant->money_not_cashed_yet = 0;
-		restaurant->isOpen = true;
+	return 0;
+}
 
-		sharedMemory->escribir(*restaurant);
+void initValues(MemoriaCompartida2<restaurant_t>* sharedMemory,restaurant_t *restaurant) {
+	restaurant->main_pid = getpid();
+	restaurant->tables = TABLES;
+	restaurant->busyTables = 0;
+	restaurant->dinersInLiving = 0;
+	restaurant->cash = 0;
+	restaurant->diners = 0;
+	restaurant->dinersInRestaurant = 0;
+	restaurant->money_not_cashed_yet = 0;
+	restaurant->isOpen = true;
 
-		new Semaphore(FILE_RESTAURANT, KEY_MEMORY, 1);
-		new Semaphore(FILE_RESTAURANT,KEY_TABLES, 0);
-	}
+	sharedMemory->escribir(*restaurant);
+
+	new Semaphore(FILE_RESTAURANT, KEY_MEMORY, 1);
+	new Semaphore(FILE_RESTAURANT,KEY_TABLES, 0);
+}
 
 
-	void destroy(MemoriaCompartida2<restaurant_t>* sharedMemory) {
-		unsigned long pid = getpid();
-		Logger::getInstance()->insert(KEY_RESTO, STRINGS_DESTROY, pid);
+void destroy(MemoriaCompartida2<restaurant_t>* sharedMemory) {
+	unsigned long pid = getpid();
+	Logger::getInstance()->insert(KEY_RESTO, STRINGS_DESTROY, pid);
 
-		Fifo* fifo = new Fifo(DINER_IN_DOOR);
-		fifo->cerrar();
-		fifo->_destroy();
+	Fifo* fifo = new Fifo(DINER_IN_DOOR);
+	fifo->cerrar();
+	fifo->_destroy();
 
-		fifo = new Fifo(DINER_IN_LIVING);
-		fifo->cerrar();
-		fifo->_destroy();
+	fifo = new Fifo(DINER_IN_LIVING);
+	fifo->cerrar();
+	fifo->_destroy();
 
-		fifo = new Fifo(ORDERS);
-		fifo->cerrar();
-		fifo->_destroy();
+	fifo = new Fifo(ORDERS);
+	fifo->cerrar();
+	fifo->_destroy();
 
-		fifo = new Fifo(ORDERS_TO_COOK);
-		fifo->cerrar();
-		fifo->_destroy();
+	fifo = new Fifo(ORDERS_TO_COOK);
+	fifo->cerrar();
+	fifo->_destroy();
 
-		LockFile* lock = new LockFile(DINER_IN_DOOR_LOCK);
-		lock->~LockFile();
+	LockFile* lock = new LockFile(DINER_IN_DOOR_LOCK);
+	lock->~LockFile();
 
-		lock = new LockFile(DINER_IN_LIVING_LOCK);
-		lock->~LockFile();
+	lock = new LockFile(DINER_IN_LIVING_LOCK);
+	lock->~LockFile();
 
-		lock = new LockFile(ORDERS_LOCK);
-		lock->~LockFile();
+	lock = new LockFile(ORDERS_LOCK);
+	lock->~LockFile();
 
-		Semaphore* semaphore = new Semaphore(FILE_RESTAURANT,	KEY_MEMORY);
-		semaphore->destroy();
+	Semaphore* semaphore = new Semaphore(FILE_RESTAURANT,	KEY_MEMORY);
+	semaphore->destroy();
 
-		semaphore = new Semaphore(FILE_RESTAURANT, KEY_TABLES);
-		semaphore->destroy();
+	semaphore = new Semaphore(FILE_RESTAURANT, KEY_TABLES);
+	semaphore->destroy();
 
-		Logger::getInstance()->insert(KEY_RESTO, STRINGS_FINISHED);
-	}
+	Logger::getInstance()->insert(KEY_RESTO, STRINGS_FINISHED);
+}

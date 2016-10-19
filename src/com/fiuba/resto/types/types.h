@@ -23,6 +23,7 @@ struct restaurant_t {
 struct order_t {
 	char type;
 	pid_t pid;
+	unsigned int toPay;
 };
 
 #endif /* TYPES_H_ */
