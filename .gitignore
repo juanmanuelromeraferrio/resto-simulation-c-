@@ -41,3 +41,6 @@ cmake_install.cmake
 #EXE
 resto_simulation_c
 logger.log
+
+#Config
+/src/com/fiuba/resto/config/config.json
