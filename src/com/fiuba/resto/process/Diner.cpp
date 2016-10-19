@@ -48,8 +48,19 @@ Diner::~Diner() {
 }
 
 unsigned int Diner::menuPrice() {
-	//TODO: agregar funcion para elegir menu random desde config.json
-	return 10;
+	unsigned int entrada;
+	unsigned int plato_principal;
+	unsigned int postre;
+	unsigned int bebida;
+
+	entrada = Parser::getInstance()->getFromMenu("entrada",randomChoice());
+	plato_principal = Parser::getInstance()->getFromMenu("plato_principal",randomChoice());
+	postre = Parser::getInstance()->getFromMenu("postre",randomChoice());
+	bebida = Parser::getInstance()->getFromMenu("bebida",randomChoice());
+
+	unsigned int resultado = (entrada+plato_principal+bebida+postre);
+
+	return resultado;
 }
 
 void Diner::run() {

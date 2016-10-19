@@ -22,3 +22,7 @@ Parser::~Parser() {
 int Parser::getIntValue(std::string value) {
 	return js[value];
 }
+
+unsigned int Parser::getFromMenu(std::string value, int rnd) {
+	return js[value][rnd];
+}

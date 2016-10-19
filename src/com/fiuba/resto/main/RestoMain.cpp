@@ -161,6 +161,8 @@ int main(int argc, char** argv) {
 					Diner diner;
 					diner.run();
 				} else {
+
+					//Si no se corto la luz, espero a que terminen los diners
 					for (int i = 0; i < diners; i++) {
 						wait(NULL);
 					}

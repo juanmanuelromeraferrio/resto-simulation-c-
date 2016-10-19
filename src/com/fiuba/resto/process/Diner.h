@@ -37,6 +37,9 @@ private:
 	int repeatOrder() {
 		return rand() % 3 + 1;
 	}
+	int randomChoice() {
+		return rand() % 4;
+	}
 	unsigned int menuPrice();
 
 public:

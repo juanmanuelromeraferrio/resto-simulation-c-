@@ -22,6 +22,7 @@ public:
 	static Parser* getInstance();
 	virtual ~Parser();
 	int getIntValue(std::string value);
+	unsigned int getFromMenu(std::string value, int rnd);
 };
 
 #endif /** PARSER_H */
