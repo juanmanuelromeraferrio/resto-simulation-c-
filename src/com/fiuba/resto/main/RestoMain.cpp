@@ -61,14 +61,13 @@ int main(int argc, char** argv) {
 	int longIndex;
 
 	unsigned long resto_pid = getpid();
-	Logger::getInstance()->insert(KEY_RESTO, "Initing Resto ", resto_pid);
-
 	opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
 
 	while (opt != -1) {
 		switch (opt) {
 		case 'i':
 			try {
+				Logger::getInstance()->insert(KEY_RESTO, "Initing Resto ", resto_pid);
 				MemoriaCompartida2<restaurant_t> sharedMemory_i(
 				FILE_RESTAURANT, KEY_MEMORY);
 				initValues(&sharedMemory_i, &restaurant);
