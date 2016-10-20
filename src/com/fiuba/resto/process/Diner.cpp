@@ -8,14 +8,18 @@
 #include "Diner.h"
 
 #include <unistd.h>
-#include <sstream>
+#include <csignal>
 #include <cstdlib>
-#include <signal.h>
+#include <ctime>
+#include <exception>
+#include <sstream>
 
 #include "../logger/Logger.h"
 #include "../logger/Strings.h"
-#include "../types/types.h"
+#include "../parser/Parser.h"
 #include "../utils/Constant.h"
+#include "../utils/signals/SignalHandler.h"
+#include "../utils/signals/SIGQUIT_Handler.h"
 
 using namespace std;
 
@@ -53,31 +57,54 @@ unsigned int Diner::menuPrice() {
 	unsigned int postre;
 	unsigned int bebida;
 
-	entrada = Parser::getInstance()->getFromMenu("entrada",randomChoice());
-	plato_principal = Parser::getInstance()->getFromMenu("plato_principal",randomChoice());
-	postre = Parser::getInstance()->getFromMenu("postre",randomChoice());
-	bebida = Parser::getInstance()->getFromMenu("bebida",randomChoice());
+	entrada = Parser::getInstance()->getFromMenu("entrada", randomChoice());
+	plato_principal = Parser::getInstance()->getFromMenu("plato_principal",
+			randomChoice());
+	postre = Parser::getInstance()->getFromMenu("postre", randomChoice());
+	bebida = Parser::getInstance()->getFromMenu("bebida", randomChoice());
 
-	unsigned int resultado = (entrada+plato_principal+bebida+postre);
+	unsigned int resultado = (entrada + plato_principal + bebida + postre);
 
 	return resultado;
 }
 
 void Diner::run() {
 
-	enterToRestaurant();
+	SIGQUIT_Handler sigquit_handler;
+	SignalHandler::getInstance()->registerHandler(SIGQUIT, &sigquit_handler);
 
-	bool hasPlace = waitToSeat();
+	try {
+		enterToRestaurant();
 
-	if (hasPlace) {
-		srand ( time(NULL) );
-		for (int i = 0; i < repeatOrder(); ++i) {
-			order();
-			waitOrder();
-			eat();
+		bool hasPlace = waitToSeat();
+
+		if (hasPlace && sigquit_handler.getPowerOutage() == 0) {
+			srand(time(NULL));
+			for (int i = 0; i < repeatOrder(); ++i) {
+				if (sigquit_handler.getPowerOutage() == 1)
+					break;
+				order();
+				if (sigquit_handler.getPowerOutage() == 1)
+					break;
+				waitOrder();
+				if (sigquit_handler.getPowerOutage() == 1)
+					break;
+				eat();
+				if (sigquit_handler.getPowerOutage() == 1)
+					break;
+			}
+			if (sigquit_handler.getPowerOutage() == 0) {
+				pay();
+			}
+			leaveRestaurant(sigquit_handler.getPowerOutage() == 1);
 		}
-		pay();
-		leaveRestaurant();
+
+	} catch (exception& e) {
+		if (sigquit_handler.getPowerOutage() == 0) {
+			throw e;
+		} else {
+			leaveRestaurant(sigquit_handler.getPowerOutage() == 1);
+		}
 	}
 }
 
@@ -91,7 +118,12 @@ bool Diner::waitToSeat() {
 	Logger::getInstance()->insert(KEY_DINER, STRINGS_WAITING_FOR_A_TABLE);
 
 	char wait;
-	dinerFifo->_read((char*) &wait, sizeof(char));
+	int result = dinerFifo->_read((char*) &wait, sizeof(char));
+
+	if (result == -1) {
+		exception e;
+		throw e;
+	}
 
 	if (wait == 1) {
 		Logger::getInstance()->insert(KEY_DINER, STRINGS_SEAT);
@@ -123,7 +155,12 @@ void Diner::waitOrder() {
 	Logger::getInstance()->insert(KEY_DINER, STRINGS_WAITING_ORDER);
 
 	char wait;
-	dinerFifo->_read((char*) &wait, sizeof(char));
+	int result = dinerFifo->_read((char*) &wait, sizeof(char));
+
+	if (result == -1) {
+		exception e;
+		throw e;
+	}
 }
 
 void Diner::eat() {
@@ -144,7 +181,7 @@ void Diner::pay() {
 	ordersFifo->_write((char *) &order, sizeof(order_t));
 }
 
-void Diner::leaveRestaurant() {
+void Diner::leaveRestaurant(bool powerOutage) {
 	Logger::getInstance()->insert(KEY_DINER, STRINGS_LEAVING);
 
 	this->memorySemaphore->wait();
@@ -152,16 +189,26 @@ void Diner::leaveRestaurant() {
 
 	restaurant.dinersInRestaurant--;
 
-	if (restaurant.dinersInLiving > 0) {
+	if (!powerOutage && restaurant.dinersInLiving > 0) {
 		tablesSemaphore->signal();
 	} else {
-		restaurant.busyTables--;
+
+		if (powerOutage) {
+			restaurant.dinersInLiving = 0;
+			restaurant.money_not_cashed += this->toPay;
+		}
+
+		if (restaurant.busyTables > 0) {
+			restaurant.busyTables--;
+		}
+
 		Logger::getInstance()->insert(KEY_DINER,
 		STRINGS_UPDATE_TABLE, restaurant.busyTables);
 
-		if (restaurant.diners == DINERS_TOTAL && restaurant.dinersInRestaurant == 0) {
-			Logger::getInstance()->insert(KEY_DINER,STRINGS_LAST_DINER);
-			kill(restaurant.main_pid, SIGQUIT);
+		if (restaurant.diners >= DINERS_TOTAL
+				&& restaurant.dinersInRestaurant == 0) {
+			Logger::getInstance()->insert(KEY_DINER, STRINGS_LAST_DINER);
+			kill(restaurant.main_pid, SIGTERM);
 		}
 	}
 

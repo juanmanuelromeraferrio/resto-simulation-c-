@@ -10,13 +10,14 @@
 
 struct restaurant_t {
 	unsigned long main_pid;
+	unsigned long diners_main_pid;
 	unsigned int tables;
 	unsigned int busyTables;
 	unsigned int dinersInLiving;
 	unsigned int cash;
 	unsigned int diners;
 	unsigned int dinersInRestaurant;
-	unsigned int money_not_cashed_yet;
+	unsigned int money_not_cashed;
 	bool isOpen = false;
 };
 

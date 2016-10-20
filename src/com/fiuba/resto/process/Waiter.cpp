@@ -17,6 +17,7 @@
 #include "../utils/Constant.h"
 #include "../utils/signals/SignalHandler.h"
 #include "../utils/signals/SIGINT_Handler.h"
+
 #include "action/SendOrderToCookAction.h"
 
 using namespace std;
@@ -29,6 +30,7 @@ Waiter::Waiter() {
 
 	this->ordersFifo = new Fifo(ORDERS);
 	this->ordersLock = new LockFile(ORDERS_LOCK);
+	this->sigquit_handler;
 }
 
 Waiter::~Waiter() {
@@ -38,7 +40,9 @@ Waiter::~Waiter() {
 void Waiter::run() {
 
 	SIGINT_Handler sigint_handler;
+
 	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
+	SignalHandler::getInstance()->registerHandler(SIGQUIT, &sigquit_handler);
 
 	while (sigint_handler.getGracefulQuit() == 0) {
 
@@ -57,9 +61,6 @@ void Waiter::run() {
 				deliverOrder(order);
 			}
 		} catch (exception& e) {
-			if (sigint_handler.getGracefulQuit() == 0) {
-				throw e;
-			}
 		}
 	}
 
@@ -105,22 +106,27 @@ void Waiter::chargeOrder(order_t order) {
 	memorySemaphore->wait();
 	restaurant_t restaurant = sharedMemory.read();
 	restaurant.cash += order.toPay;
-	Logger::getInstance()->insert(KEY_WAITER, STRINGS_MONEY_IN_CASH, restaurant.cash);
+	Logger::getInstance()->insert(KEY_WAITER, STRINGS_MONEY_IN_CASH,
+			restaurant.cash);
 	sharedMemory.write(restaurant);
 	memorySemaphore->signal();
 }
 
 void Waiter::deliverOrder(order_t order) {
 
-	Logger::getInstance()->insert(KEY_WAITER, STRINGS_DISPATCH_ORDER, order.pid);
+	Logger::getInstance()->insert(KEY_WAITER, STRINGS_DISPATCH_ORDER,
+			order.pid);
 
 	sleep(DELIVER_ORDER_TIME);
 
-	stringstream ssDinerFifoName;
-	ssDinerFifoName << DINERS_FIFO << order.pid;
+	if (sigquit_handler.getPowerOutage() == 0) {
 
-	char response = 1;
-	Fifo* dinerFifo = new Fifo(ssDinerFifoName.str());
-	dinerFifo->_write(&response, sizeof(char));
+		stringstream ssDinerFifoName;
+		ssDinerFifoName << DINERS_FIFO << order.pid;
+
+		char response = 1;
+		Fifo* dinerFifo = new Fifo(ssDinerFifoName.str());
+		dinerFifo->_write(&response, sizeof(char));
+	}
 }
 

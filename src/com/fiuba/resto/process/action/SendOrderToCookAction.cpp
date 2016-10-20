@@ -24,8 +24,6 @@ SendOrderToCookAction::~SendOrderToCookAction() {
 }
 
 void SendOrderToCookAction::send(order_t order) {
-	Logger::getInstance()->insert(KEY_ORDER_TO_COOK_ACTION,	STRINGS_SEND_ORDER_TO_COOK, order.pid);
-
 	ordersToCookFifo->_write((char *) &order, sizeof(order_t));
 }
 

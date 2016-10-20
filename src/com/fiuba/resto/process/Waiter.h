@@ -12,6 +12,7 @@
 #include "../utils/LockFile.h"
 #include "../types/types.h"
 #include "../utils/SharedMemory.h"
+#include "../utils/signals/SIGQUIT_Handler.h"
 
 #include <strings.h>
 #include "../utils/Fifo.h"
@@ -21,6 +22,7 @@ private:
 
 	SharedMemory<restaurant_t> sharedMemory;
 	Semaphore* memorySemaphore;
+	SIGQUIT_Handler sigquit_handler;
 
 	Fifo* ordersFifo;
 	LockFile* ordersLock;

@@ -16,6 +16,7 @@
 #include "../utils/Constant.h"
 #include "../utils/signals/SignalHandler.h"
 #include "../utils/signals/SIGINT_Handler.h"
+#include "../utils/signals/SIGQUIT_Handler.h"
 
 using namespace std;
 
@@ -37,15 +38,16 @@ Attendant::~Attendant() {
 void Attendant::run() {
 
 	SIGINT_Handler sigint_handler;
-	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
+	SIGQUIT_Handler sigquit_handler;
+	SignalHandler::getInstance()->registerHandler(
+	SIGINT, &sigint_handler);
+	SignalHandler::getInstance()->registerHandler(
+	SIGQUIT, &sigquit_handler);
 
 	while (sigint_handler.getGracefulQuit() == 0) {
 		try {
 			asignTable();
 		} catch (exception& e) {
-			if (sigint_handler.getGracefulQuit() == 0) {
-				throw e;
-			}
 		}
 	}
 

@@ -28,8 +28,6 @@ AddDinerToLivingLineAction::~AddDinerToLivingLineAction() {
 }
 
 void AddDinerToLivingLineAction::run(unsigned long dinerPid) {
-	Logger::getInstance()->insert(KEY_DINER_TO_LIVING_ACTION,
-	STRINGS_ADD_DINER_TO_LIVING, dinerPid);
 
 	this->memorySemaphore->wait();
 

@@ -1,8 +1,8 @@
 {
-  "hosts" : 4,
-  "waiters" : 4,
-  "tables" : 5,
-  "diners_total" : 5,
+  "hosts" : 1,
+  "waiters" : 1,
+  "tables" : 1,
+  "diners_total" : 2,
   "entrada" : [1,2,3,4],
   "plato_principal" : [50,55,60,65],
   "postre" : [20,25,30,35],

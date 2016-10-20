@@ -12,6 +12,7 @@
 #include "../utils/LockFile.h"
 #include "../utils/SharedMemory.h"
 #include "../types/types.h"
+#include "../utils/signals/SIGQUIT_Handler.h"
 
 #include <strings.h>
 #include "../utils/Fifo.h"
@@ -26,8 +27,10 @@ private:
 	LockFile* dinerInDoorLock;
 	Semaphore* memorySemaphore;
 
+	SIGQUIT_Handler sigquit_handler;
+
 	unsigned long searchDinerInDoor();
-	bool dinersFull();
+	bool dinerCanEnter();
 	bool existFreeTable();
 	void sendOutDiner(unsigned long dinerPid);
 	void moveDinerToTable(unsigned long dinerPid);

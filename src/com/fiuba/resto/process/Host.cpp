@@ -32,6 +32,8 @@ Host::Host() {
 
 	this->memorySemaphore = new Semaphore(FILE_RESTAURANT,
 	KEY_MEMORY);
+
+	this->sigquit_handler;
 }
 
 Host::~Host() {
@@ -42,13 +44,14 @@ void Host::run() {
 
 	SIGINT_Handler sigint_handler;
 	SignalHandler::getInstance()->registerHandler(SIGINT, &sigint_handler);
+	SignalHandler::getInstance()->registerHandler(SIGQUIT, &sigquit_handler);
 
 	while (sigint_handler.getGracefulQuit() == 0) {
 		try {
 
 			unsigned long dinerPid = searchDinerInDoor();
-			bool isFull = dinersFull();
-			if (!isFull) {
+			bool enter = dinerCanEnter();
+			if (enter) {
 				bool freeTable = existFreeTable();
 				if (freeTable) {
 					moveDinerToTable(dinerPid);
@@ -63,9 +66,6 @@ void Host::run() {
 			}
 
 		} catch (exception& e) {
-			if (sigint_handler.getGracefulQuit() == 0) {
-				throw e;
-			}
 		}
 	}
 
@@ -94,8 +94,12 @@ unsigned long Host::searchDinerInDoor() {
 	return dinerPid;
 }
 
-bool Host::dinersFull() {
-	bool dinersComplete = true;
+bool Host::dinerCanEnter() {
+	bool canEnter = false;
+
+	if (sigquit_handler.getPowerOutage() == 1) {
+		return false;
+	}
 
 	memorySemaphore->wait();
 
@@ -105,12 +109,12 @@ bool Host::dinersFull() {
 		restaurant.diners++;
 		restaurant.dinersInRestaurant++;
 		sharedMemory.write(restaurant);
-		dinersComplete = false;
+		canEnter = true;
 	}
 
 	memorySemaphore->signal();
 
-	return dinersComplete;
+	return canEnter;
 }
 
 bool Host::existFreeTable() {

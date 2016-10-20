@@ -13,7 +13,6 @@
 #include "../utils/SharedMemory.h"
 #include "../types/types.h"
 
-
 #include <strings.h>
 
 class Diner {
@@ -33,7 +32,7 @@ private:
 	void waitOrder();
 	void eat();
 	void pay();
-	void leaveRestaurant();
+	void leaveRestaurant(bool powerOutage);
 	int repeatOrder() {
 		return rand() % 3 + 1;
 	}
